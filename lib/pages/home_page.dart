@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:meditation_tracker/pages/timer_page.dart';
+import 'package:meditation_tracker/pages/session/session_start_page.dart';
 import 'package:meditation_tracker/pages/recent_page.dart';
 import 'package:meditation_tracker/pages/settings_page.dart';
 
@@ -13,7 +13,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   var _bottomNavigationBarSelectedIndex = 0;
   final List<Widget> _bottomNavigationBarItems = [
-    TimerPage(),
+    SessionStartPage(),
     const RecentPage(),
     const SettingsPage()
   ];

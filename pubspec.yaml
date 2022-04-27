@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   audio_service: ^0.18.4
   numberpicker: ^2.1.1
+  sqflite: ^2.0.2+1
+  intl: ^0.17.0
 
 dev_dependencies:
   flutter_test:

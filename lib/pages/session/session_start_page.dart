@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:meditation_tracker/pages/session/session_page.dart';
 import 'package:numberpicker/numberpicker.dart';
 
-class TimerPage extends StatefulWidget {
-  TimerPage({Key? key}) : super(key: key);
+class SessionStartPage extends StatefulWidget {
+  SessionStartPage({Key? key}) : super(key: key);
 
   @override
-  State<TimerPage> createState() => _TimerPageState();
+  State<SessionStartPage> createState() => _SessionStartPageState();
 }
 
-class _TimerPageState extends State<TimerPage> {
+class _SessionStartPageState extends State<SessionStartPage> {
   int _currentSessionTimeValue = 1;
   int _currentIntervalValue = 0;
 
@@ -58,7 +59,7 @@ class _TimerPageState extends State<TimerPage> {
               height: 50,
             ),
             ElevatedButton(
-                onPressed: () {},
+                onPressed: _beginOnTapped,
                 child: Text(
                   'Begin',
                   style: TextStyle(fontSize: 20.0),
@@ -71,13 +72,31 @@ class _TimerPageState extends State<TimerPage> {
   void _updateSessionTime(int value) {
     setState(() {
       _currentSessionTimeValue = value;
+
+      if (value <= _currentIntervalValue) {
+        _currentIntervalValue = _currentSessionTimeValue - 1;
+      }
     });
   }
 
   void _updateInterval(int value) {
     setState(() {
-      _currentIntervalValue = value;
+      if (value >= _currentSessionTimeValue) {
+        _currentIntervalValue = _currentSessionTimeValue - 1;
+      } else {
+        _currentIntervalValue = value;
+      }
     });
+  }
+
+  void _beginOnTapped() {
+    Navigator.push(
+        context,
+        SlideBottomRoute(
+            page: SessionPage(
+          sessionMins: _currentSessionTimeValue,
+          intervalMins: _currentIntervalValue,
+        )));
   }
 }
 
@@ -163,4 +182,30 @@ class PickerBlock extends StatelessWidget {
       ],
     );
   }
+}
+
+class SlideBottomRoute extends PageRouteBuilder {
+  final Widget page;
+  SlideBottomRoute({required this.page})
+      : super(
+          pageBuilder: (
+            BuildContext context,
+            Animation<double> animation,
+            Animation<double> secondaryAnimation,
+          ) =>
+              page,
+          transitionsBuilder: (
+            BuildContext context,
+            Animation<double> animation,
+            Animation<double> secondaryAnimation,
+            Widget child,
+          ) =>
+              SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
 }
