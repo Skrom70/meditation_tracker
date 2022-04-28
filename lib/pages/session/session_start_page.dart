@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:meditation_tracker/database/database_provider.dart';
 import 'package:meditation_tracker/pages/session/session_page.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:provider/provider.dart';
 
 class SessionStartPage extends StatefulWidget {
   SessionStartPage({Key? key}) : super(key: key);
@@ -17,19 +19,27 @@ class _SessionStartPageState extends State<SessionStartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          title: Column(
             children: [
-              Image(
-                  image: AssetImage('lib/assets/images/lotus_icon.png'),
-                  height: 35),
-              SizedBox(
-                width: 8,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image(
+                      image: AssetImage('lib/assets/images/lotus_icon.png'),
+                      height: 35),
+                  SizedBox(
+                    width: 8,
+                  ),
+                  Text(
+                    'Lotus',
+                    style: Theme.of(context).appBarTheme.titleTextStyle,
+                  ),
+                ],
               ),
               Text(
-                'Lotus',
-                style: Theme.of(context).appBarTheme.titleTextStyle,
-              ),
+                'Mantra - 425ghz, messaze your bain',
+                style: TextStyle(fontSize: 10),
+              )
             ],
           ),
         ),

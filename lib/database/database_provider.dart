@@ -1,87 +1,94 @@
 import 'package:flutter/material.dart';
-import 'package:meditation_tracker/pages/database/database_session.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:intl/intl.dart';
+import 'package:meditation_tracker/common/date_formatter.dart';
+import 'package:meditation_tracker/database/database_manader.dart';
+import 'package:meditation_tracker/database/database_session.dart';
 
-class DatabaseProvider {
-  late Database db;
+class DatabaseProvider extends ChangeNotifier {
+  List<DatabaseSession> _sessions = [
+    // DatabaseSession(
+    //     id: 0, durationMins: 25, dateString: 'April 17, 2022 17:31'),
+    // DatabaseSession(
+    //     id: 0, durationMins: 25, dateString: 'April 21, 2022 17:31'),
+    // DatabaseSession(id: 0, durationMins: 25, dateString: 'April 7, 2022 17:32'),
+    // DatabaseSession(id: 0, durationMins: 25, dateString: 'April 1, 2022 17:32'),
+    // DatabaseSession(id: 0, durationMins: 25, dateString: 'July 5, 2022 17:32'),
+    // DatabaseSession(id: 0, durationMins: 25, dateString: 'July 3, 2022 17:32'),
+    // DatabaseSession(id: 0, durationMins: 25, dateString: 'July 17, 2021 17:32'),
+    // DatabaseSession(
+    //     id: 0, durationMins: 25, dateString: 'April 17, 2022 17:32'),
+  ];
+  List<DatabaseSession> get sessions => this._sessions;
 
-  final tableName = 'Sessions';
+  Map<DateTime, List<DatabaseSession>> _sessionsByMonth = {};
+  Map<DateTime, List<DatabaseSession>> get sessionsByMonth =>
+      this._sessionsByMonth;
 
-  Future<void> open() async {
-    db = await openDatabase('meditation_tracker.db', version: 1,
-        onCreate: (Database db, int version) async {
-      await db.execute('''CREATE TABLE $tableName (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      durationMins INTEGER,
-      dateString TEXT,
-      )''');
+  final _databaseManager = DatabaseManager();
+
+  String get totalTime => _totalTime;
+  String _totalTime = '';
+
+  void getAll() {
+    this._getAll();
+  }
+
+  void _getAll() async {
+    _databaseManager.getAll().then((value) {
+      value.sort();
+      _sessions = value;
+      _sessions.sort();
+      _sessions = _sessions.reversed.toList();
+      this._getByMonth();
+      this._getTotalTime();
+      notifyListeners();
     });
   }
 
-  Future<Set<DatabaseSession>> getAll() async {
-    await open();
-    List<Map> maps = await db.query(tableName, columns: [
-      'id',
-      'durationMins',
-      'dateString',
-    ]);
-    Set<DatabaseSession> records =
-        maps.map((e) => DatabaseSession.fromMap(e)).toSet();
-    return records;
+  void _getByMonth() {
+    final monthsList = sessions.map((e) {
+      return DateFormat.yMMMM().parse(DateFormat.yMMMM().format(e.date));
+    }).toSet();
+
+    final Map<DateTime, List<DatabaseSession>> sessionByMonth = {};
+
+    monthsList.forEach((dateMonth) {
+      sessionByMonth[dateMonth] = sessions
+          .where((el) => (el.date.month == dateMonth.month &&
+              el.date.year == dateMonth.year))
+          .toList();
+    });
+
+    _sessionsByMonth = sessionByMonth;
   }
 
-  Future<DatabaseSession?> getItembyId(int id) async {
-    await open();
-    List<Map> maps = await db.query(tableName,
-        columns: [
-          'id',
-          'durationMins',
-          'dateString',
-        ],
-        where: 'id = $id');
-    if (maps.isNotEmpty) {
-      return maps.map((e) => DatabaseSession.fromMap(e)).toList().first;
-    } else {
-      return null;
-    }
+  void _getTotalTime() {
+    final durationMins = sessions
+        .map<int>((el) => el.durationMins)
+        .reduce((value, element) => value + element);
+
+    final countHours = durationMins ~/ 60;
+    final countMins = countHours == 0 ? durationMins : (durationMins % 60);
+
+    final String hours = countHours == 0 ? '' : '${countHours}h';
+    final String mins = countMins == 0 ? '' : '${countMins}m';
+
+    _totalTime = '$hours $mins';
   }
 
-  Future<DatabaseSession> insert(DatabaseSession databaseSession) async {
-    await open();
-
-    databaseSession.id = await db.insert(tableName, databaseSession.toMap());
-    return databaseSession;
+  void insert(DatabaseSession session) {
+    _databaseManager.insert(session).then((_) => this.getAll());
   }
 
-  Future<DatabaseSession> update(DatabaseSession databaseSession) async {
-    if (databaseSession.id != null) {
-      await open();
-
-      databaseSession.id = await db.update(tableName, databaseSession.toMap(),
-          where: 'id = ${databaseSession.id ?? 0}');
-    }
-    return databaseSession;
+  void delete(DatabaseSession session) {
+    _databaseManager.delete(session).then((_) => this.getAll());
   }
 
-  Future<DatabaseSession> delete(DatabaseSession databaseSession) async {
-    if (databaseSession.id != null) {
-      await open();
-      databaseSession.id =
-          await db.delete(tableName, where: 'id = ${databaseSession.id ?? 0}');
-    }
-    return databaseSession;
+  void update(DatabaseSession session) {
+    _databaseManager.update(session).then((_) => this.getAll());
   }
 
-  Future<void> deleteAll() async {
-    try {
-      await open();
-      await db.execute('DELETE FROM $tableName');
-    } catch (e) {
-      ErrorHint('An error has occurred');
-    }
-  }
-
-  Future<void> close() async {
-    await db.close();
+  void deleteAll() {
+    _databaseManager.deleteAll().then((_) => this.getAll());
   }
 }

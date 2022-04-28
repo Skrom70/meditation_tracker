@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:meditation_tracker/pages/database/database_session.dart';
+import 'package:meditation_tracker/common/bottom_bar_provider.dart';
+import 'package:meditation_tracker/database/database_session.dart';
+import 'package:provider/provider.dart';
 
 class SessionFinishPage extends StatelessWidget {
   const SessionFinishPage({Key? key, required this.session}) : super(key: key);
@@ -32,7 +34,7 @@ class SessionFinishPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${DateFormat('EEEE').add_H().format(session.date ?? DateTime.now())}',
+                        '${DateFormat('EEEE').format(session.date)}',
                         style: TextStyle(fontSize: 20.0),
                       ),
                       Spacer(),
@@ -74,6 +76,8 @@ class SessionFinishPage extends StatelessWidget {
   }
 
   void _doneOnTapped(BuildContext context) {
+    Provider.of<BottomNavigationBarProvider>(context, listen: false)
+        .setBottomNavigationBarIndex(1);
     Navigator.of(context).pop();
   }
 }

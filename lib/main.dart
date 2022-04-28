@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:meditation_tracker/common/bottom_bar_provider.dart';
+import 'package:meditation_tracker/database/database_provider.dart';
 import 'package:meditation_tracker/pages/home_page.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(
+          create: (context) => BottomNavigationBarProvider()),
+      ChangeNotifierProvider(
+        create: (context) => DatabaseProvider(),
+      )
+    ],
+    child: MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -16,8 +29,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         appBarTheme: AppBarTheme(
             titleTextStyle: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w500,
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
                 color: Colors.white)),
         fontFamily: 'Avenir',
         primarySwatch: Colors.indigo,

@@ -1,11 +1,11 @@
 import 'package:meditation_tracker/common/date_formatter.dart';
 
-class DatabaseSession {
+class DatabaseSession implements Comparable<DatabaseSession> {
   int? id;
-  final String? dateString;
-  final int? durationMins;
-  DateTime? get date {
-    return defaultDateFormatter.parse(this.dateString ?? '');
+  final String dateString;
+  final int durationMins;
+  DateTime get date {
+    return defaultDateFormatter.parse(this.dateString);
   }
 
   DatabaseSession(
@@ -35,5 +35,10 @@ class DatabaseSession {
     if (dateString != other.dateString) return false;
     if (durationMins != other.durationMins) return false;
     return true;
+  }
+
+  @override
+  int compareTo(DatabaseSession other) {
+    return this.date.compareTo(other.date);
   }
 }

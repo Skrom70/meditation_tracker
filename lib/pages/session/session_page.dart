@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:intl/intl.dart';
 import 'package:meditation_tracker/common/date_formatter.dart';
+import 'package:meditation_tracker/database/database_manader.dart';
+import 'package:meditation_tracker/database/database_provider.dart';
 import 'package:meditation_tracker/database/database_session.dart';
-import 'package:meditation_tracker/pages/session_finish_page.dart';
-import 'package:meditation_tracker/pages/timer_page.dart';
+import 'package:meditation_tracker/pages/session/session_finish_page.dart';
+import 'package:meditation_tracker/pages/session/session_start_page.dart';
+import 'package:meditation_tracker/reuseble_widget/simple_snack_bar.dart';
+import 'package:provider/provider.dart';
 
 class SessionPage extends StatefulWidget {
   const SessionPage(
@@ -270,18 +273,19 @@ class _SessionPageState extends State<SessionPage>
 
   void _finishSession() {
     if (widget.sessionMins -
-            (widget.sessionMins * _sessionTimeAnimation.value) >
+            (widget.sessionMins * _sessionTimeAnimation.value) >=
         1.0) {
       final durationMins = (widget.sessionMins -
               (widget.sessionMins * _sessionTimeAnimation.value))
           .toInt();
       final date = defaultDateFormatter.format(DateTime.now());
-      Navigator.pushReplacement(
-          context,
-          SlideBottomRoute(
-              page: SessionFinishPage(
-                  session: DatabaseSession(
-                      durationMins: durationMins, dateString: date))));
+      final databaseSession =
+          DatabaseSession(durationMins: durationMins, dateString: date);
+
+      Provider.of<DatabaseProvider>(context, listen: false)
+          .insert(databaseSession);
+      Navigator.pushReplacement(context,
+          SlideBottomRoute(page: SessionFinishPage(session: databaseSession)));
     } else {
       Navigator.of(context).pop();
     }
