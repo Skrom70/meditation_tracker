@@ -3,6 +3,7 @@ import 'package:group_list_view/group_list_view.dart';
 import 'package:intl/intl.dart';
 import 'package:meditation_tracker/database/database_provider.dart';
 import 'package:meditation_tracker/database/database_session.dart';
+import 'package:meditation_tracker/reuseble_widget/breath_circle.dart';
 import 'package:provider/provider.dart';
 
 class RecentPage extends StatelessWidget {
@@ -41,9 +42,19 @@ class RecentPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Text(
-                    'Total is ${provider.totalTime}',
-                    style: TextStyle(fontSize: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.timer,
+                        color: Color.fromRGBO(255, 215, 0, 1).withOpacity(0.8),
+                        size: 12,
+                      ),
+                      Text(
+                        '${provider.totalTime}',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                    ],
                   )
                 ],
               ),
@@ -100,38 +111,46 @@ class RecentPage extends StatelessWidget {
         from.durationMins == 1 ? '1 min' : '${from.durationMins} mins';
 
     return ListTile(
-      title: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '$title, ',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.blueGrey),
-            ),
-            Text(addingToTitle,
+        title: Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$title, ',
                 style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontStyle: FontStyle.italic,
-                    color: Colors.blueGrey))
+                    color: Colors.blueGrey),
+              ),
+              Text(addingToTitle,
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.blueGrey))
+            ],
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Text(
+            subtitle,
+            style: TextStyle(fontSize: 18, color: Colors.black),
+          ),
+        ),
+        trailing: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              child: Center(
+                child: BreathCircle(
+                    initalValue: from.durationMins, maxValue: 90, size: 56),
+              ),
+            ),
+            Spacer()
           ],
-        ),
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: Text(
-          subtitle,
-          style: TextStyle(fontSize: 18, color: Colors.black),
-        ),
-      ),
-      trailing: Icon(
-        Icons.accessibility_new_rounded,
-        color: Colors.blueGrey,
-      ),
-    );
+        ));
   }
 
   void _loadData(BuildContext context) async {
