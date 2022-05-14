@@ -1,79 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:meditation_tracker/common/date_formatter.dart';
 import 'package:meditation_tracker/database/database_manader.dart';
 import 'package:meditation_tracker/database/database_session.dart';
 
 class DatabaseProvider extends ChangeNotifier {
-  List<DatabaseSession> _sessions = [
-    // DatabaseSession(
-    //     id: 0, durationMins: 25, dateString: 'April 17, 2022 17:31'),
-    // DatabaseSession(
-    //     id: 0, durationMins: 25, dateString: 'April 21, 2022 17:31'),
-    // DatabaseSession(id: 0, durationMins: 25, dateString: 'April 7, 2022 17:32'),
-    // DatabaseSession(id: 0, durationMins: 25, dateString: 'April 1, 2022 17:32'),
-    // DatabaseSession(id: 0, durationMins: 25, dateString: 'July 5, 2022 17:32'),
-    // DatabaseSession(id: 0, durationMins: 25, dateString: 'July 3, 2022 17:32'),
-    // DatabaseSession(id: 0, durationMins: 25, dateString: 'July 17, 2021 17:32'),
-    // DatabaseSession(
-    //     id: 0, durationMins: 25, dateString: 'April 17, 2022 17:32'),
-  ];
-  List<DatabaseSession> get sessions => this._sessions;
-
-  Map<DateTime, List<DatabaseSession>> _sessionsByMonth = {};
-  Map<DateTime, List<DatabaseSession>> get sessionsByMonth =>
-      this._sessionsByMonth;
+  DatabaseSessionPreview get preview => this._preview;
+  late DatabaseSessionPreview _preview = DatabaseSessionPreview([], '');
 
   final _databaseManager = DatabaseManager();
-
-  String get totalTime => _totalTime;
-  String _totalTime = '';
 
   void getAll() {
     this._getAll();
   }
 
   void _getAll() async {
-    _databaseManager.getAll().then((value) {
-      value.sort();
-      _sessions = value;
-      _sessions.sort();
-      _sessions = _sessions.reversed.toList();
-      this._getByMonth();
-      this._getTotalTime();
-      notifyListeners();
-    });
+    var values = await _databaseManager.getAll();
+    values.sort();
+    values = values.reversed.toList();
+
+    final sessionsByMonths = _sortSessionByMonth(values);
+    final totalTime = _getTotalTime(values);
+    final sessionsPreview = DatabaseSessionPreview(sessionsByMonths, totalTime);
+    _preview = sessionsPreview;
+    notifyListeners();
   }
 
-  void _getByMonth() {
-    final monthsList = sessions.map((e) {
+  List<DatabaseSessionByMonth> _sortSessionByMonth(
+      List<DatabaseSession> values) {
+    // Sessions By Days
+    final daysList = values.map((e) {
+      return DateFormat.yMMMEd().parse(DateFormat.yMMMEd().format(e.date));
+    }).toSet();
+
+    final sessionsByDays = daysList.map((dateDay) {
+      List<DatabaseSession> sessionsByDay = values
+          .where((el) => (el.date.month == dateDay.month &&
+              el.date.year == dateDay.year &&
+              el.date.day == dateDay.day))
+          .toList();
+      return DatabaseSessionByDay(dateDay, sessionsByDay);
+    }).toList();
+
+    // Sessions By Months
+    final monthList = sessionsByDays.map((e) {
       return DateFormat.yMMMM().parse(DateFormat.yMMMM().format(e.date));
     }).toSet();
 
-    final Map<DateTime, List<DatabaseSession>> sessionByMonth = {};
-
-    monthsList.forEach((dateMonth) {
-      sessionByMonth[dateMonth] = sessions
+    final sessionByMonths = monthList.map((dateMonth) {
+      List<DatabaseSessionByDay> sessionsByMonth = sessionsByDays
           .where((el) => (el.date.month == dateMonth.month &&
               el.date.year == dateMonth.year))
           .toList();
-    });
+      return DatabaseSessionByMonth(dateMonth, sessionsByMonth);
+    }).toList();
 
-    _sessionsByMonth = sessionByMonth;
+    return sessionByMonths;
   }
 
-  void _getTotalTime() {
-    final durationMins = sessions
-        .map<int>((el) => el.durationMins)
-        .reduce((value, element) => value + element);
+  String _getTotalTime(List<DatabaseSession> values) {
+    if (values.isNotEmpty) {
+      final durationMins = values
+          .map<int>((el) => el.durationMins)
+          .reduce((value, element) => value + element);
 
-    final countHours = durationMins ~/ 60;
-    final countMins = countHours == 0 ? durationMins : (durationMins % 60);
+      final countHours = durationMins ~/ 60;
+      final countMins = countHours == 0 ? durationMins : (durationMins % 60);
 
-    final String hours = countHours == 0 ? '' : '${countHours}h';
-    final String mins = countMins == 0 ? '' : '${countMins}m';
+      final String hours = countHours == 0 ? '' : '${countHours}h';
+      final String mins = countMins == 0 ? '' : '${countMins}m';
 
-    _totalTime = '$hours $mins';
+      return '$hours $mins';
+    }
+    return '';
   }
 
   void insert(DatabaseSession session) {

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:meditation_tracker/database/database_provider.dart';
 import 'package:meditation_tracker/pages/session/session_page.dart';
 import 'package:numberpicker/numberpicker.dart';
-import 'package:provider/provider.dart';
 
 class SessionStartPage extends StatefulWidget {
   SessionStartPage({Key? key}) : super(key: key);
@@ -107,6 +105,10 @@ class _SessionStartPageState extends State<SessionStartPage> {
           sessionMins: _currentSessionTimeValue,
           intervalMins: _currentIntervalValue,
         )));
+    setState(() {
+      _currentSessionTimeValue = 1;
+      _currentIntervalValue = 0;
+    });
   }
 }
 

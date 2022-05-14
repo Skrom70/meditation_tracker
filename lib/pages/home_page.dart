@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:meditation_tracker/common/bottom_bar_provider.dart';
-import 'package:meditation_tracker/database/database_manader.dart';
 import 'package:meditation_tracker/pages/session/session_start_page.dart';
 import 'package:meditation_tracker/pages/recent/recent_page.dart';
 import 'package:meditation_tracker/pages/settings/settings_page.dart';

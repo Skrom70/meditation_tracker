@@ -9,16 +9,6 @@ import 'package:provider/provider.dart';
 class RecentPage extends StatelessWidget {
   RecentPage({Key? key}) : super(key: key);
 
-  // final Map<String, List> provider.sections = {
-  //   'Fruits Name From A': ['Apple', 'Apricot', 'Avocado'],
-  //   'Fruits Name From B': ['Banana', 'Blackberry', 'Blueberry', 'Boysenberry'],
-  //   'Fruits Name From C': ['Cherry', 'Coconut'],
-  //   'Fruits Name From D': ['Date Fruit', 'Durian'],
-  //   'Fruits Name From G': ['Grapefruit', 'Grapes', 'Guava']
-  // };
-
-  String totalTime = '';
-
   @override
   Widget build(BuildContext context) {
     _loadData(context);
@@ -51,7 +41,7 @@ class RecentPage extends StatelessWidget {
                         size: 12,
                       ),
                       Text(
-                        '${provider.totalTime}',
+                        '${provider.preview.totalTime}',
                         style: TextStyle(fontSize: 10),
                       ),
                     ],
@@ -60,28 +50,28 @@ class RecentPage extends StatelessWidget {
               ),
             ),
             body: GroupListView(
-              sectionsCount: provider.sessionsByMonth.keys.toList().length,
+              sectionsCount: provider.preview.months.toList().length,
               countOfItemInSection: (int section) {
-                return provider.sessionsByMonth.values.toList()[section].length;
+                return provider.preview.months[section].days.length;
               },
               itemBuilder: (context, index) =>
                   _itemBuilder(context, index, provider),
               groupHeaderBuilder: (BuildContext context, int section) =>
                   _buildSessionTitleWidget(
-                      context, provider.sessionsByMonth.keys.toList()[section]),
+                      context, provider.preview.months[section].date),
               separatorBuilder: (context, indexPath) => Divider(
                 height: 1,
                 color: Colors.black.withOpacity(0.5),
-                indent: 20,
+                indent: 30,
+                endIndent: 30,
               ),
             ))));
   }
 
   Widget _itemBuilder(
       BuildContext context, IndexPath index, DatabaseProvider provider) {
-    final session =
-        provider.sessionsByMonth.values.toList()[index.section][index.index];
-    return _buildSessionItemWidget(session);
+    final day = provider.preview.months[index.section].days[index.index];
+    return _buildSessionItemWidget(context, day);
   }
 
   Widget _buildSessionTitleWidget(BuildContext context, DateTime from) {
@@ -104,53 +94,86 @@ class RecentPage extends StatelessWidget {
         ));
   }
 
-  Widget _buildSessionItemWidget(DatabaseSession from) {
-    final String title = DateFormat.d().add_EEEE().format(from.date);
-    final String addingToTitle = DateFormat.Hm().format(from.date);
-    final String subtitle =
-        from.durationMins == 1 ? '1 min' : '${from.durationMins} mins';
+  Widget _buildSessionItemWidget(
+      BuildContext context, DatabaseSessionByDay from) {
+    final String title = DateFormat('MMMM d, EEEE').format(from.date);
+
+    List<Row> sessions = from.sessions.map((e) {
+      final String title =
+          e.durationMins == 1 ? '1 min' : '${e.durationMins} mins';
+      final String addingToTitle = DateFormat.Hm().format(e.date);
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${title}',
+                  style: TextStyle(
+                      fontSize: 18, color: Theme.of(context).primaryColor),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 100,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(addingToTitle,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.blueGrey)),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 100,
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Container(
+                width: 20,
+                height: 20,
+                child: Center(
+                  child: BreathCircle(
+                      initalValue: e.durationMins, maxValue: 90, size: 20),
+                ),
+              ),
+            ]),
+          ),
+        ],
+      );
+    }).toList();
 
     return ListTile(
-        title: Padding(
-          padding: const EdgeInsets.all(4.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$title, ',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.blueGrey),
-              ),
-              Text(addingToTitle,
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.blueGrey))
-            ],
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          child: Text(
-            subtitle,
-            style: TextStyle(fontSize: 18, color: Colors.black),
-          ),
-        ),
-        trailing: Column(
+      title: Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              child: Center(
-                child: BreathCircle(
-                    initalValue: from.durationMins, maxValue: 90, size: 56),
-              ),
+            Text(
+              title,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.blueGrey),
             ),
-            Spacer()
           ],
-        ));
+        ),
+      ),
+      subtitle: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: sessions,
+          )),
+    );
   }
 
   void _loadData(BuildContext context) async {

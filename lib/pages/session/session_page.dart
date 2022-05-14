@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'dart:math';
 import 'package:meditation_tracker/common/date_formatter.dart';
-import 'package:meditation_tracker/database/database_manader.dart';
 import 'package:meditation_tracker/database/database_provider.dart';
 import 'package:meditation_tracker/database/database_session.dart';
 import 'package:meditation_tracker/pages/session/session_finish_page.dart';
 import 'package:meditation_tracker/pages/session/session_start_page.dart';
-import 'package:meditation_tracker/reuseble_widget/simple_snack_bar.dart';
 import 'package:provider/provider.dart';
 
 class SessionPage extends StatefulWidget {
-  const SessionPage(
-      {Key? key, required this.sessionMins, required this.intervalMins})
+  SessionPage({Key? key, required this.sessionMins, required this.intervalMins})
       : super(key: key);
 
   final int sessionMins;
@@ -32,12 +31,18 @@ class _SessionPageState extends State<SessionPage>
   late int _intervalCount;
   late int _intervalIndex = 0;
   bool _isPreparing = true;
-  int _prepareDurationSeconds = 3;
-  bool _isPause = false;
+  int _prepareDurationSeconds = 5;
+  bool _isStarted = false;
+  bool _isPlaying = false;
+  bool _isFinish = false;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final _fullMantraPath = 'lib/assets/sounds/full_mantra.mp3';
 
   @override
   void initState() {
     super.initState();
+
+    _loadPlayer();
 
     _intervalCount = widget.intervalMins == 0
         ? 0
@@ -66,7 +71,7 @@ class _SessionPageState extends State<SessionPage>
 
     // Session Time Animation
     _sessionTimeController = AnimationController(
-        vsync: this, duration: Duration(seconds: widget.sessionMins * 60));
+        vsync: this, duration: Duration(minutes: widget.sessionMins));
 
     Tween<double> _sessinTimeDrawStep = Tween(begin: 1.0, end: 0.0);
 
@@ -75,17 +80,14 @@ class _SessionPageState extends State<SessionPage>
         setState(() {});
       })
       ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _sessionTimeController.stop();
-          _finishSession();
-        } else if (status == AnimationStatus.dismissed) {
+        if (status == AnimationStatus.dismissed) {
           _sessionTimeController.forward();
         }
       });
 
     // Interval Time Animation
     _intervalTimeController = AnimationController(
-        vsync: this, duration: Duration(seconds: widget.intervalMins * 60));
+        vsync: this, duration: Duration(minutes: widget.intervalMins));
 
     Tween<double> _intervalTimeDrawStep = Tween(begin: 1.0, end: 0.0);
 
@@ -108,19 +110,77 @@ class _SessionPageState extends State<SessionPage>
           });
   }
 
+  void _loadPlayer() async {
+    if (_audioPlayer.audioSource == null) {
+      await _audioPlayer.setAudioSource(ClippingAudioSource(
+        end: Duration(minutes: widget.sessionMins),
+        tag: MediaItem(
+          id: '1',
+          title: "Full mantra",
+          artUri: Uri.parse('asset:///lib/assets/images/lotus_icon.png'),
+        ),
+        child: AudioSource.uri(
+          Uri.parse('asset:///$_fullMantraPath'),
+        ),
+      ));
+    }
+
+    _audioPlayer.playerStateStream.listen((event) {
+      if (event.processingState == ProcessingState.completed) {
+        _sessionTimeController.forward(from: 1.0);
+        _finishSession();
+      }
+      if (_isStarted) {
+        setState(() {
+          if (event.processingState == ProcessingState.ready) {
+            final currentPosition = _audioPlayer.position.inMilliseconds;
+            final sessionTime =
+                Duration(minutes: widget.sessionMins).inMilliseconds;
+            final intervalTime =
+                Duration(minutes: widget.intervalMins).inMilliseconds;
+
+            final sessionAnimationValue = currentPosition / sessionTime;
+
+            _sessionTimeController.forward(from: sessionAnimationValue);
+
+            if (_intervalIndex < _intervalCount && _intervalCount > 0) {
+              if (_intervalIndex == 0 && currentPosition < intervalTime) {
+                final intervalAnimationValue = currentPosition / intervalTime;
+                _intervalTimeController.forward(from: intervalAnimationValue);
+              } else {
+                final intervalAnimationValue =
+                    (currentPosition % intervalTime) / intervalTime;
+                _intervalTimeController.forward(from: intervalAnimationValue);
+              }
+            }
+          }
+          if (event.playing != this._isPlaying) {
+            if (event.playing) {
+              _isPlaying = true;
+            } else {
+              _sessionTimeController.stop();
+              _intervalTimeController.stop();
+              _isPlaying = false;
+            }
+          }
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
     [_prepareController, _sessionTimeController, _intervalTimeController]
         .forEach((element) {
       element.dispose();
     });
+    _audioPlayer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('sdfsd')),
       body: SafeArea(
           child: Stack(children: [
         _buildSessionWidget(),
@@ -131,9 +191,9 @@ class _SessionPageState extends State<SessionPage>
 
   Widget _buildSessionWidget() {
     if (_prepareAnimation.value < 0.1) {
-      if (!_sessionTimeController.isAnimating && !_isPause) {
-        _sessionTimeController.forward();
-        if (_intervalCount > 0) _intervalTimeController.forward();
+      if (!_sessionTimeController.isAnimating && !_isStarted) {
+        _isStarted = true;
+        _audioPlayer.play();
       }
       return Column(
         children: [
@@ -212,7 +272,7 @@ class _SessionPageState extends State<SessionPage>
   }
 
   Widget _buildBottonBar() {
-    if (_isPause) {
+    if (!_isPlaying) {
       return Row(
         children: [
           Spacer(),
@@ -250,21 +310,11 @@ class _SessionPageState extends State<SessionPage>
   }
 
   void _pauseOnTapped() {
-    setState(() {
-      _sessionTimeController.stop();
-      _intervalTimeController.stop();
-      _isPause = true;
-    });
+    _audioPlayer.pause();
   }
 
   void _resumeOnTapped() {
-    setState(() {
-      _sessionTimeController.forward();
-      if (_intervalIndex < _intervalCount) {
-        _intervalTimeController.forward();
-      }
-      _isPause = false;
-    });
+    _audioPlayer.play();
   }
 
   void _finishOnTapped() {
@@ -281,14 +331,17 @@ class _SessionPageState extends State<SessionPage>
       final date = defaultDateFormatter.format(DateTime.now());
       final databaseSession =
           DatabaseSession(durationMins: durationMins, dateString: date);
-
-      Provider.of<DatabaseProvider>(context, listen: false)
-          .insert(databaseSession);
+      if (!_isFinish) {
+        _isFinish = true;
+        Provider.of<DatabaseProvider>(context, listen: false)
+            .insert(databaseSession);
+      }
       Navigator.pushReplacement(context,
           SlideBottomRoute(page: SessionFinishPage(session: databaseSession)));
     } else {
       Navigator.of(context).pop();
     }
+    _audioPlayer.stop();
   }
 }
 
