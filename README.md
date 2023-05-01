@@ -7,4 +7,4 @@ Features:
  - Set interval during meditation
  - Track your sessions by date and compare duration
  
-![med2](https://user-images.githubusercontent.com/35266971/235534419-5f0ac4ef-1dba-4489-a021-ff74b37267e1.gif)
+![med3](https://user-images.githubusercontent.com/35266971/235534814-6969ff1a-d2a9-4093-8db0-5794ecbe4a74.gif)
