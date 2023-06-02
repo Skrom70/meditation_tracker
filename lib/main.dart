@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:meditation_tracker/app/app_observer.dart';
 import 'package:meditation_tracker/common/bottom_bar_provider.dart';
 import 'package:meditation_tracker/database/database_provider.dart';
 import 'package:meditation_tracker/pages/home_page.dart';
@@ -12,13 +14,16 @@ Future<void> main() async {
     androidNotificationOngoing: true,
   );
   WidgetsFlutterBinding.ensureInitialized();
+
+  Bloc.observer = AppBlocObserver();
+
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(
           create: (context) => BottomNavigationBarProvider()),
       ChangeNotifierProvider(
         create: (context) => DatabaseProvider(),
-      )
+      ),
     ],
     child: MyApp(),
   ));

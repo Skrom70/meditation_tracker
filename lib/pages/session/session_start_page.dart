@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:meditation_tracker/pages/session/session_page.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:meditation_tracker/pages/session/session_timer/view/session_now_page.dart';
 
 class SessionStartPage extends StatefulWidget {
   SessionStartPage({Key? key}) : super(key: key);
@@ -101,7 +101,7 @@ class _SessionStartPageState extends State<SessionStartPage> {
     Navigator.push(
         context,
         SlideBottomRoute(
-            page: SessionPage(
+            page: SessionNowPage(
           sessionMins: _currentSessionTimeValue,
           intervalMins: _currentIntervalValue,
         )));

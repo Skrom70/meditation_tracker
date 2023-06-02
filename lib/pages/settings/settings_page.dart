@@ -13,7 +13,9 @@ class SettingsPage extends StatelessWidget {
       DateFormat.yMMM().format(date),
       DateFormat.yMMMM().add_s().format(date)
     ];
-    debugPrint('datee: ${dates[0]}');
+
+    debugPrint('date: ${dates[0]}');
+
     return Scaffold(
         appBar: AppBar(
           title: Column(
